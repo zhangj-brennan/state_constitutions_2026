@@ -1,0 +1,718 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>State map template</title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+<style>
+  @font-face { font-family: "Benton"; src: url("Benton Sans/Benton Sans Book.otf"); }
+  @font-face { font-family: "BentonStrong"; src: url("Benton Sans/Benton Sans Bold.otf"); }
+  @font-face { font-family: "BentonMedium"; src: url("Benton Sans/Benton Sans Medium.otf"); }
+
+  * { box-sizing: border-box; }
+
+  body{
+    margin: 0;
+    padding: 16px;
+    background: #fff;
+    color: #111;
+    font-family: "Benton", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  }
+
+  #wrapper{
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+  }
+
+  #title{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: clamp(20px, 3vw, 26px);
+    padding: 10px 0;
+    border-top: 3px solid black;
+    margin-bottom: 10px;
+  }
+
+  #subtitle{
+    font-size: 14px;
+    line-height: 1.35;
+    color: #444;
+    margin-bottom: 16px;
+  }
+
+  #topControls{
+    display: grid;
+    gap: 12px;
+    margin-bottom: 14px;
+  }
+
+  .toggleGroup{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+  }
+
+  .toggleLabel{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 12px;
+    min-width: 70px;
+  }
+
+  .miniBtn,
+  .filterBtn{
+    appearance: none;
+    border: 1px solid #bbb;
+    background: #fff;
+    color: #111;
+    padding: 8px 10px;
+    font-family: "BentonMedium", system-ui, sans-serif;
+    font-size: 12px;
+    line-height: 1.15;
+    cursor: pointer;
+  }
+
+  .miniBtn:hover,
+  .filterBtn:hover{
+    border-color: #777;
+  }
+
+  .miniBtn.active,
+  .filterBtn.active{
+    background: #111;
+    color: #fff;
+    border-color: #111;
+  }
+
+  #buttonBar{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 14px;
+  }
+
+  .filterBtn{
+    text-align: left;
+  }
+
+  #currentLabel{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 15px;
+    line-height: 1.3;
+    margin-bottom: 10px;
+  }
+
+  #mapWrap{
+    max-width: 500px;
+  }
+
+  svg{
+    display: block;
+    width: 100%;
+    height: auto;
+    max-width: 100%;
+  }
+
+  .state text{
+    text-anchor: middle;
+    user-select: none;
+    pointer-events: none;
+  }
+
+  .abbr{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.2px;
+  }
+
+  .valueLabel{
+    font-family: "Benton", system-ui, sans-serif;
+    font-size: 10px;
+    letter-spacing: 0.1px;
+  }
+
+  .legendWrap{
+    margin-top: 10px;
+  }
+
+  .legendTitle{
+    font-family: "BentonMedium", system-ui, sans-serif;
+    font-size: 11px;
+    color: #555;
+    margin-bottom: 4px;
+  }
+
+  .legendRow{
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px 8px;
+    align-items: center;
+  }
+
+  .legendItem{
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 10px;
+    color: #555;
+    line-height: 1.1;
+  }
+
+  .legendSwatch{
+    width: 12px;
+    height: 12px;
+    border: 1px solid rgba(0,0,0,.15);
+    flex: 0 0 12px;
+  }
+
+  .tooltip{
+    position: fixed;
+    z-index: 9999;
+    pointer-events: none;
+    background: rgba(255,255,255,.98);
+    border: 1px solid rgba(0,0,0,.15);
+    box-shadow: 0 4px 18px rgba(0,0,0,.12);
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.35;
+    max-width: 420px;
+    max-height: 70vh;
+    overflow: auto;
+    opacity: 0;
+  }
+
+  .tooltip-title{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 13px;
+    margin-bottom: 4px;
+  }
+
+  .tooltip-sub{
+    color: #444;
+    margin-bottom: 8px;
+  }
+
+  .tooltip-list{
+    display: grid;
+    gap: 8px;
+  }
+
+  .tooltip-item{
+    border-top: 1px solid #e3e3e3;
+    padding-top: 7px;
+  }
+
+  .tooltip-year{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    margin-bottom: 2px;
+  }
+
+  .tooltip-desc{
+    margin-bottom: 2px;
+  }
+
+  .tooltip-notes{
+    color: #555;
+  }
+
+  @media (max-width: 700px){
+    body{ padding: 10px; }
+    .miniBtn, .filterBtn{ font-size: 11px; padding: 7px 9px; }
+    .abbr{ font-size: 10px; }
+    .valueLabel{ font-size: 9px; }
+  }
+</style>
+</head>
+
+<body>
+<div id="wrapper">
+  <div id="title">State constitution amendments - keywords TEST</div>
+  <div id="subtitle"></div>
+  <div id="topControls">
+    <div class="toggleGroup" id="v4Controls"></div>
+    <div class="toggleGroup" id="v5Controls"></div>
+  </div>
+
+  <div id="buttonBar"></div>
+  <div id="currentLabel"></div>
+
+  <div id="mapWrap">
+    <div id="mapHost"></div>
+    <div id="legendHost"></div>
+  </div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+
+<script id="grid" type="text/plain">
+                              ME
+               WI          VT NH
+WA ID MT ND MN IL MI    NY MA
+OR NV WY SD IA IN OH PA NJ CT RI
+CA UT CO NE MO KY WV VA MD DE
+   AZ NM KS AR TN NC SC
+         OK LA MS AL GA
+HI AK    TX             FL
+</script>
+
+<script>
+    const ALL_KEY = "__ALL__";
+const CONFIG = {
+  
+  CSV_PATH: "BOS Amendment Data 2005-2024 BCJ 1.2.1.csv",
+  STATE_COL: "state",
+  YEAR_COL: "year",
+  DESCRIPTION_COL: "description",
+  NOTES_COL: "text_notes",
+
+  FILTER_COLS: {
+    v4: "v4",
+    v5: "v5"
+  },
+
+  DRAW_COLUMNS: [
+    "v9","v10","v12","v13","v14","v15","v11",
+    "v16","v17","v18","v19","v20","v21","v22","v23"
+  ],
+
+   LABELS: {
+    v4:"pass",
+    v9:  'Civil rights("right", "domain", "affirmative", "ethnicity", "race")',
+    v10: 'Criminal law("marijuana", "crime", "criminal")',
+    v11: 'Criminal procedure("bail", "felon", "jury", "trial", "bond")',
+    v12: 'Economic and labor rights("work", "wage", "union", "collective")',
+    v13: 'Education("education", "school", "college", "university")',
+    v14: 'Environment("energy", "conservation", "forest", "natural", "parks", "renewable", "resources", "lands")',
+    v15: 'Government structure("legislature", "legislative", "legislator", "senate", "term", "retire", "salary", "commission", "governor", "gubernatorial", "executive", "board", "judicial", "judges", "court", "office", "official", "government")',
+    v16: 'Gun rights("gun", "arms")',
+    v17: 'Judicial selection and administration("court", "judicial", "judge")',
+    v18: 'Reproductive rights("abortion", "parental")',
+    v19: 'Speech and religion("speech", "expression", "religion", "exercise", "establishment")',
+    v20: 'Torts and liability("tort", "liab")',
+    v21: 'Voting rights and elections("voting", "election", "district", "campaign", "voter", "ID", "primaries", "primary", "absentee", "regist")',
+    v22: 'Redistricting("redistrict")',
+    v23: 'LGBTQ+("sex", "marriage", "SSM")'
+  },
+
+  FILTER_LABELS: {
+     v4: "initiative",
+  v5: "passed"
+  },
+
+  tileSize: 34,
+  tileGapFactor: 1.18,
+  cornerRadius: 0,
+  stroke: "rgba(0,0,0,.16)",
+  strokeWidth: 1,
+
+  ZERO_COLOR: "#D9D9D9",
+  SCALE_BREAKS: [1, 2, 3, 5, 8, 12],
+  SCALE_COLORS: ["#FFF5F0", "#FDCDBE", "#F99A8A", "#EF6351", "#D7301F", "#99000D"],
+
+  SHOW_ZERO_TEXT: true,
+  MAX_TOOLTIP_ITEMS: 200,
+  DEFAULT_SELECTED_COLUMNS: ["v21"]
+};
+
+const STATE_NAMES = {
+  AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",
+  CA: "California", CO: "Colorado", CT: "Connecticut",
+  DE: "Delaware", DC: "District of Columbia",
+  FL: "Florida", GA: "Georgia", HI: "Hawaii",
+  ID: "Idaho", IL: "Illinois", IN: "Indiana", IA: "Iowa",
+  KS: "Kansas", KY: "Kentucky", LA: "Louisiana",
+  ME: "Maine", MD: "Maryland", MA: "Massachusetts",
+  MI: "Michigan", MN: "Minnesota", MS: "Mississippi",
+  MO: "Missouri", MT: "Montana", NE: "Nebraska",
+  NV: "Nevada", NH: "New Hampshire", NJ: "New Jersey",
+  NM: "New Mexico", NY: "New York",
+  NC: "North Carolina", ND: "North Dakota",
+  OH: "Ohio", OK: "Oklahoma", OR: "Oregon",
+  PA: "Pennsylvania", RI: "Rhode Island",
+  SC: "South Carolina", SD: "South Dakota",
+  TN: "Tennessee", TX: "Texas",
+  UT: "Utah", VT: "Vermont", VA: "Virginia",
+  WA: "Washington", WV: "West Virginia",
+  WI: "Wisconsin", WY: "Wyoming"
+};
+
+
+function getShortLabel(label){
+  const s = String(label || "");
+  return s.split("(")[0].trim();
+}
+
+
+function parseStateGridText(gridText){
+  const states = [];
+  gridText.split("\n").forEach((line, i) => {
+    const re = /\w+/g;
+    let m;
+    while ((m = re.exec(line))) {
+      states.push({ name: m[0], x: m.index / 3, y: i });
+    }
+  });
+  return states;
+}
+
+const GRID_STATES = parseStateGridText(document.getElementById("grid").textContent);
+const tooltip = d3.select("#tooltip");
+
+function clampInt(n, min, max){
+  n = Math.round(Number(n));
+  if (!Number.isFinite(n)) n = min;
+  return Math.max(min, Math.min(max, n));
+}
+
+function cleanAbbr(s){
+  return String(s || "").trim().toUpperCase();
+}
+
+function formatValue(v){
+  return d3.format(",")(v);
+}
+
+function isOne(v){
+  return String(v).trim() === "1";
+}
+
+function matchesToggle(rowValue, mode){
+  if (mode === "all") return true;
+  if (mode === "yes") return String(rowValue).trim() === "1";
+  if (mode === "no") return String(rowValue).trim() === "0";
+  return true;
+}
+
+function getThresholdScale(breaks, colors){
+  if (colors.length !== breaks.length) {
+    throw new Error("SCALE_BREAKS and SCALE_COLORS must have the same length.");
+  }
+  return d3.scaleThreshold()
+    .domain(breaks.slice(1))
+    .range(colors);
+}
+
+function getFillColor(value, scale){
+  if (!Number.isFinite(value) || value <= 0) return CONFIG.ZERO_COLOR;
+  return scale(value);
+}
+
+function getTextColor(fill){
+  const c = d3.color(fill);
+  if (!c) return "#111";
+  const luminance = (0.2126 * c.r + 0.7152 * c.g + 0.0722 * c.b) / 255;
+  return luminance < 0.55 ? "#fff" : "#111";
+}
+
+function buildLegendItems(localMax){
+  const items = [{ color: CONFIG.ZERO_COLOR, label: "0" }];
+  if (!Number.isFinite(localMax) || localMax <= 0) return items;
+
+  for (let i = 0; i < CONFIG.SCALE_BREAKS.length; i++) {
+    const start = CONFIG.SCALE_BREAKS[i];
+    if (start > localMax) break;
+    const nextStart = CONFIG.SCALE_BREAKS[i + 1];
+    const end = nextStart ? Math.min(nextStart - 1, localMax) : localMax;
+    const label = end <= start ? `${start}` : `${start}–${end}`;
+    items.push({ color: CONFIG.SCALE_COLORS[i], label });
+  }
+
+  return items;
+}
+
+function renderLegend(localMax){
+  const host = d3.select("#legendHost").html("");
+  const items = buildLegendItems(localMax);
+
+  const legend = host.append("div").attr("class", "legendWrap");
+  legend.append("div").attr("class", "legendTitle").text("Legend");
+
+  const row = legend.append("div").attr("class", "legendRow");
+
+  row.selectAll(".legendItem")
+    .data(items)
+    .enter()
+    .append("div")
+    .attr("class", "legendItem")
+    .html(d => `<span class="legendSwatch" style="background:${d.color}"></span><span>${d.label}</span>`);
+}
+
+function escapeHtml(str){
+  return String(str ?? "")
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;")
+    .replaceAll("'", "&#39;");
+}
+
+function showTooltip(event, stateAbbr, bundle){
+  const count = bundle ? bundle.count : 0;
+  const records = bundle ? bundle.records.slice(0, CONFIG.MAX_TOOLTIP_ITEMS) : [];
+  const fullName = STATE_NAMES[stateAbbr] || stateAbbr;
+
+  let html = `
+    <div class="tooltip-title">${escapeHtml(fullName)} (${escapeHtml(stateAbbr)})</div>
+    <div class="tooltip-sub"><strong>${formatValue(count)}</strong> matching amandments${count === 1 ? "" : "s"}</div>
+  `;
+
+  if (records.length > 0) {
+    html += `<div class="tooltip-list">`;
+    records.forEach(r => {
+      html += `
+        <div class="tooltip-item">
+          <div class="tooltip-year">${escapeHtml(r.year)}</div>
+          <div class="tooltip-desc">${escapeHtml(r.description)}</div>
+          <div class="tooltip-notes">${escapeHtml(r.text_notes)}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+  }
+
+  tooltip
+    .style("opacity", 1)
+    .html(html)
+    .style("left", `${event.clientX + 12}px`)
+    .style("top", `${event.clientY + 12}px`);
+}
+
+function hideTooltip(){
+  tooltip.style("opacity", 0);
+}
+
+function getFilteredRows(rawRows, filterState){
+  return rawRows.filter(row =>
+    matchesToggle(row[CONFIG.FILTER_COLS.v4], filterState.v4) &&
+    matchesToggle(row[CONFIG.FILTER_COLS.v5], filterState.v5)
+  );
+}
+
+function aggregateRows(rawRows, selectedColumns){
+  const grouped = new Map();
+
+  rawRows.forEach(row => {
+    const state = cleanAbbr(row[CONFIG.STATE_COL]);
+    if (!state) return;
+
+    const matchesAnySelected = selectedColumns.some(column => isOne(row[column]));
+    if (!matchesAnySelected) return;
+
+    const key = state;
+
+    if (!grouped.has(key)) {
+      grouped.set(key, {
+        state,
+        count: 0,
+        records: []
+      });
+    }
+
+    const bundle = grouped.get(key);
+    bundle.count += 1;
+    bundle.records.push({
+      year: row[CONFIG.YEAR_COL] ?? "",
+      description: row[CONFIG.DESCRIPTION_COL] ?? "",
+      text_notes: row[CONFIG.NOTES_COL] ?? ""
+    });
+  });
+
+  return grouped;
+}
+
+function renderCategoryButtons(){
+  const bar = d3.select("#buttonBar").html("");
+  const buttonData = [ALL_KEY, ...CONFIG.DRAW_COLUMNS];
+
+  bar.selectAll(".filterBtn")
+    .data(buttonData)
+    .enter()
+    .append("button")
+    .attr("class", d => {
+      const allIsActive = currentState.selectedColumns.size === CONFIG.DRAW_COLUMNS.length;
+      if (d === ALL_KEY) {
+        return `filterBtn${allIsActive ? " active" : ""}`;
+      }
+      return `filterBtn${currentState.selectedColumns.has(d) ? " active" : ""}`;
+    })
+    .text(d => {
+      if (d === ALL_KEY) return "All";
+      return getShortLabel(CONFIG.LABELS[d] || d);
+    })
+    .on("click", function(event, d){
+      const allIsActive = currentState.selectedColumns.size === CONFIG.DRAW_COLUMNS.length;
+
+      if (d === ALL_KEY) {
+        if (allIsActive) {
+          currentState.selectedColumns = new Set([CONFIG.DEFAULT_SELECTED_COLUMNS[0]]);
+        } else {
+          currentState.selectedColumns = new Set(CONFIG.DRAW_COLUMNS);
+        }
+      } else {
+        if (allIsActive) {
+          currentState.selectedColumns = new Set([d]);
+        } else {
+          if (currentState.selectedColumns.has(d)) {
+            currentState.selectedColumns.delete(d);
+          } else {
+            currentState.selectedColumns.add(d);
+          }
+
+          if (currentState.selectedColumns.size === 0) {
+            currentState.selectedColumns.add(CONFIG.DEFAULT_SELECTED_COLUMNS[0]);
+          }
+        }
+      }
+
+      update();
+    });
+}
+
+function renderToggleGroup(containerId, key, labelText){
+  const options = [
+    { value: "all", label: "All" },
+    { value: "yes", label: "Yes" },
+    { value: "no", label: "No" }
+  ];
+
+  const host = d3.select(containerId).html("");
+
+  host.append("div")
+    .attr("class", "toggleLabel")
+    .text(labelText);
+
+  host.selectAll(".miniBtn")
+    .data(options)
+    .enter()
+    .append("button")
+    .attr("class", d => `miniBtn${currentState.filters[key] === d.value ? " active" : ""}`)
+    .text(d => d.label)
+    .on("click", function(event, d){
+      currentState.filters[key] = d.value;
+      update();
+    });
+}
+
+function drawMapSkeleton(){
+  const tileSize = clampInt(CONFIG.tileSize, 18, 60);
+  const cellSize = Math.round(tileSize * (Number(CONFIG.tileGapFactor) || 1.18));
+  const tileW = tileSize;
+  const tileH = tileSize;
+
+  const gridWidth = d3.max(GRID_STATES, d => d.x) + 1;
+  const gridHeight = d3.max(GRID_STATES, d => d.y) + 1;
+
+  const w = Math.round(gridWidth * cellSize + cellSize);
+  const h = Math.round(gridHeight * cellSize + cellSize);
+
+  const svg = d3.select("#mapHost")
+    .html("")
+    .append("svg")
+    .attr("viewBox", `0 0 ${w} ${h}`);
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${w / 2},${h / 2})`);
+
+  const state = g.selectAll(".state")
+    .data(GRID_STATES)
+    .enter()
+    .append("g")
+    .attr("class", "state")
+    .attr("transform", d =>
+      `translate(${(d.x - gridWidth / 2) * cellSize}, ${(d.y - gridHeight / 2) * cellSize})`
+    );
+
+  state.append("rect")
+    .attr("x", -tileW / 2)
+    .attr("y", -tileH / 2)
+    .attr("width", tileW)
+    .attr("height", tileH)
+    .attr("rx", CONFIG.cornerRadius)
+    .attr("ry", CONFIG.cornerRadius)
+    .attr("stroke", CONFIG.stroke)
+    .attr("stroke-width", Number(CONFIG.strokeWidth ?? 1));
+
+  state.append("text")
+    .attr("class", "abbr")
+    .attr("y", -4)
+    .text(d => d.name);
+
+  state.append("text")
+    .attr("class", "valueLabel")
+    .attr("y", 9);
+
+  return state;
+}
+
+let currentState = {
+  rawRows: [],
+  selectedColumns: new Set(CONFIG.DEFAULT_SELECTED_COLUMNS),
+  filters: {
+    v4: "all",
+    v5: "all"
+  },
+  stateSelection: null
+};
+
+function update(){
+  renderToggleGroup("#v4Controls", "v4", CONFIG.FILTER_LABELS.v4 || "v4");
+renderToggleGroup("#v5Controls", "v5", CONFIG.FILTER_LABELS.v5 || "v5");
+  renderCategoryButtons();
+
+  const selectedColumns = Array.from(currentState.selectedColumns);
+  const filteredRows = getFilteredRows(currentState.rawRows, currentState.filters);
+  const aggregated = aggregateRows(filteredRows, selectedColumns);
+
+  const localValues = GRID_STATES.map(s => {
+    const bundle = aggregated.get(s.name);
+    return bundle ? bundle.count : 0;
+  });
+  const localMax = d3.max(localValues) || 0;
+
+  d3.select("#currentLabel").text(
+    `Selected: ${selectedColumns.map(col => CONFIG.LABELS[col] || col).join(" + ")}`
+  );
+
+  renderLegend(localMax);
+
+  const scale = getThresholdScale(CONFIG.SCALE_BREAKS, CONFIG.SCALE_COLORS);
+
+  currentState.stateSelection.each(function(d){
+    const bundle = aggregated.get(d.name);
+    const value = bundle ? bundle.count : 0;
+    const fill = getFillColor(value, scale);
+    const textColor = getTextColor(fill);
+    const s = d3.select(this);
+
+    s.style("cursor", value > 0 ? "pointer" : "default");
+
+    s.select("rect").attr("fill", fill);
+    s.select(".abbr").attr("fill", textColor);
+    s.select(".valueLabel")
+      .attr("fill", textColor)
+      .text(value === 0 && !CONFIG.SHOW_ZERO_TEXT ? "" : formatValue(value));
+
+    if (value > 0) {
+      s.on("mouseenter", function(event){ showTooltip(event, d.name, bundle); })
+       .on("mousemove", function(event){ showTooltip(event, d.name, bundle); })
+       .on("mouseleave", hideTooltip);
+    } else {
+      s.on("mouseenter", null)
+       .on("mousemove", null)
+       .on("mouseleave", hideTooltip);
+    }
+  });
+}
+
+async function init(){
+  const raw = await d3.csv(CONFIG.CSV_PATH);
+  currentState.rawRows = raw;
+  currentState.stateSelection = drawMapSkeleton();
+  update();
+}
+
+init();
+</script>
+</body>
+</html>
