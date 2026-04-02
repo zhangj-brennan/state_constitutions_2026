@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>State map template</title>
+<title>State Tile Cartogram + Timeline</title>
 <script src="https://d3js.org/d3.v7.min.js"></script>
 <style>
   @font-face { font-family: "Benton"; src: url("Benton Sans/Benton Sans Book.otf"); }
@@ -14,7 +14,7 @@
 
   body{
     margin: 0;
-    padding: 16px;
+    padding: 20px;
     background: #fff;
     color: #111;
     font-family: "Benton", system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
@@ -22,7 +22,7 @@
 
   #wrapper{
     width: 100%;
-    max-width: 1200px;
+    max-width: 800px;
     margin: 0 auto;
   }
 
@@ -41,32 +41,32 @@
     margin-bottom: 16px;
   }
 
-  #topControls{
-    display: grid;
-    gap: 12px;
-    margin-bottom: 14px;
-  }
+#topControls{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin-bottom: 10px;
+}
 
-  .toggleGroup{
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-  }
+ .toggleGroup{
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
 
-  .toggleLabel{
-    font-family: "BentonStrong", system-ui, sans-serif;
-    font-size: 12px;
-    min-width: 70px;
-  }
-
+.toggleLabel{
+  min-width: auto;
+  margin-right: 6px;
+  font-size: 11px;
+}
   .miniBtn,
   .filterBtn{
     appearance: none;
     border: 1px solid #bbb;
     background: #fff;
     color: #111;
-    padding: 8px 10px;
+    padding: 6px 6px;
     font-family: "BentonMedium", system-ui, sans-serif;
     font-size: 12px;
     line-height: 1.15;
@@ -88,8 +88,8 @@
   #buttonBar{
     display: flex;
     flex-wrap: wrap;
-    gap: 8px;
-    margin-bottom: 14px;
+    gap: 2px;
+    margin-bottom: 10px;
   }
 
   .filterBtn{
@@ -97,8 +97,8 @@
   }
 
   #currentLabel{
-    font-family: "Benton", system-ui, sans-serif;
-    font-size: 10px;
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 15px;
     line-height: 1.3;
     margin-bottom: 10px;
   }
@@ -166,6 +166,46 @@
     flex: 0 0 12px;
   }
 
+  #timelineWrap{
+    margin-top: 18px;
+    max-width: 500px;
+  }
+
+  #timelineTitle{
+    font-family: "BentonStrong", system-ui, sans-serif;
+    font-size: 14px;
+    margin-bottom: 6px;
+  }
+
+  #timelineHost svg{
+    display: block;
+    width: 100%;
+    height: auto;
+  }
+
+  .timelineBar{
+    cursor: default;
+  }
+
+  .timelineAxis text{
+    font-family: "Benton", system-ui, sans-serif;
+    font-size: 10px;
+    fill: #555;
+  }
+
+  .timelineAxis path,
+  .timelineAxis line{
+    stroke: #bbb;
+  }
+
+  .timelineGrid line{
+    stroke: #e3e3e3;
+  }
+
+  .timelineGrid path{
+    display: none;
+  }
+
   .tooltip{
     position: fixed;
     z-index: 9999;
@@ -216,67 +256,73 @@
     color: #555;
   }
 
+  .mobilePopupOverlay{
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.28);
+    z-index: 9998;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity .18s ease;
+  }
+
+  .mobilePopup{
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 9999;
+    background: #fff;
+    border-top-left-radius: 14px;
+    border-top-right-radius: 14px;
+    box-shadow: 0 -4px 24px rgba(0,0,0,.18);
+    padding: 16px 16px 20px;
+    max-height: 75vh;
+    overflow: auto;
+    transform: translateY(100%);
+    transition: transform .2s ease;
+    pointer-events: none;
+  }
+
+  .mobilePopup.open{
+    transform: translateY(0);
+    pointer-events: auto;
+  }
+
+  .mobilePopupOverlay.open{
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .mobilePopupClose{
+    appearance: none;
+    border: 0;
+    background: transparent;
+    font-size: 28px;
+    line-height: 1;
+    padding: 0;
+    margin: 0 0 8px auto;
+    display: block;
+    cursor: pointer;
+    color: #222;
+  }
+
+  @media (hover: hover) and (pointer: fine){
+    .mobilePopup,
+    .mobilePopupOverlay{
+      display: none;
+    }
+  }
+
   @media (max-width: 700px){
     body{ padding: 10px; }
     .miniBtn, .filterBtn{ font-size: 11px; padding: 7px 9px; }
     .abbr{ font-size: 10px; }
     .valueLabel{ font-size: 9px; }
   }
-  .mobilePopupOverlay{
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,.28);
-  z-index: 9998;
-  opacity: 0;
-  pointer-events: none;
-  transition: opacity .18s ease;
-}
-
-.mobilePopup{
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  z-index: 9999;
-  background: #fff;
-  border-top-left-radius: 14px;
-  border-top-right-radius: 14px;
-  box-shadow: 0 -4px 24px rgba(0,0,0,.18);
-  padding: 16px 16px 20px;
-  max-height: 75vh;
-  overflow: auto;
-  transform: translateY(100%);
-  transition: transform .2s ease;
-  pointer-events: none;
-}
-
-.mobilePopup.open{
-  transform: translateY(0);
-  pointer-events: auto;
-}
-
-.mobilePopupOverlay.open{
-  opacity: 1;
-  pointer-events: auto;
-}
-
-.mobilePopupClose{
-  appearance: none;
-  border: 0;
-  background: transparent;
-  font-size: 28px;
-  line-height: 1;
-  padding: 0;
-  margin: 0 0 8px auto;
-  display: block;
-  cursor: pointer;
-  color: #222;
-}
-
-@media (hover: hover) and (pointer: fine){
-  .mobilePopup,
-  .mobilePopupOverlay{
-    display: none;
+  @media (max-width: 700px){
+  #topControls{
+    grid-template-columns: 1fr;
   }
 }
 </style>
@@ -284,8 +330,10 @@
 
 <body>
 <div id="wrapper">
-  <div id="title">State constitution amendments - keywords TEST</div>
-  <div id="subtitle"></div>
+  <div id="title">State constitution amendments - keywords TEST ONLY
+</div>
+  <!-- <div id="subtitle">Select one or more categories. The map counts rows where any selected category equals 1, after applying the v4 and v5 dataset filters. The timeline shows 2-year buckets of the same filtered records.</div> -->
+
   <div id="topControls">
     <div class="toggleGroup" id="v4Controls"></div>
     <div class="toggleGroup" id="v5Controls"></div>
@@ -295,8 +343,13 @@
   <div id="currentLabel"></div>
 
   <div id="mapWrap">
-    <div id="mapHost"></div>
     <div id="legendHost"></div>
+    <div id="mapHost"></div>
+  </div>
+
+  <div id="timelineWrap">
+    <div id="timelineTitle">Timeline</div>
+    <div id="timelineHost"></div>
   </div>
 </div>
 
@@ -307,6 +360,7 @@
   <button class="mobilePopupClose" id="mobilePopupClose" aria-label="Close">×</button>
   <div id="mobilePopupContent"></div>
 </div>
+
 <script id="grid" type="text/plain">
                               ME
                WI          VT NH
@@ -319,9 +373,7 @@ HI AK    TX             FL
 </script>
 
 <script>
-    const ALL_KEY = "__ALL__";
 const CONFIG = {
-  
   CSV_PATH: "BOS Amendment Data 2005-2024 BCJ 1.2.1.csv",
   STATE_COL: "state",
   YEAR_COL: "year",
@@ -334,12 +386,11 @@ const CONFIG = {
   },
 
   DRAW_COLUMNS: [
-    "v9","v10","v12","v13","v14","v15","v11",
+    "v9","v10","v11","v12","v13","v14","v15",
     "v16","v17","v18","v19","v20","v21","v22","v23"
   ],
 
-   LABELS: {
-    v4:"pass",
+  LABELS: {
     v9:  'Civil rights("right", "domain", "affirmative", "ethnicity", "race")',
     v10: 'Criminal law("marijuana", "crime", "criminal")',
     v11: 'Criminal procedure("bail", "felon", "jury", "trial", "bond")',
@@ -358,24 +409,34 @@ const CONFIG = {
   },
 
   FILTER_LABELS: {
-     v4: "initiative",
-  v5: "passed"
+    v4: "initiative",
+    v5: "passed"
   },
 
   tileSize: 34,
-  tileGapFactor: 1.18,
+  tileGapFactor: 1.1,
   cornerRadius: 0,
   stroke: "rgba(0,0,0,.16)",
   strokeWidth: 1,
 
-   ZERO_COLOR: "#EBEAE9",
-   SCALE_BREAKS: [1, 5, 10, 20,30],
+  // Zero values always use this color
+  ZERO_COLOR: "#EBEAE9",
+
+  // Non-zero values use this threshold scale
+  SCALE_BREAKS: [1, 5, 10, 20,30],
   SCALE_COLORS: ["#C3DEEB","#6CBAD6", "#3995B2","#007194","#00415B"],
 
   SHOW_ZERO_TEXT: true,
   MAX_TOOLTIP_ITEMS: 200,
-  DEFAULT_SELECTED_COLUMNS: ["v21"]
+  DEFAULT_SELECTED_COLUMNS: ["v21"],
+
+  TIMELINE_BIN_SIZE: 2,
+  TIMELINE_HEIGHT: 160,
+  TIMELINE_MARGIN: { top: 20, right: 10, bottom: 60, left: 40 },
+  TIMELINE_BAR_COLOR: "#111"
 };
+
+const ALL_KEY = "__ALL__";
 
 const STATE_NAMES = {
   AL: "Alabama", AK: "Alaska", AZ: "Arizona", AR: "Arkansas",
@@ -398,61 +459,6 @@ const STATE_NAMES = {
   WA: "Washington", WV: "West Virginia",
   WI: "Wisconsin", WY: "Wyoming"
 };
-const mobilePopup = d3.select("#mobilePopup");
-const mobilePopupOverlay = d3.select("#mobilePopupOverlay");
-const mobilePopupContent = d3.select("#mobilePopupContent");
-const mobilePopupClose = d3.select("#mobilePopupClose");
-
-function isTouchLikeDevice(){
-  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
-}
-
-function buildPopupHtml(stateAbbr, bundle){
-  const count = bundle ? bundle.count : 0;
-  const records = bundle ? bundle.records.slice(0, CONFIG.MAX_TOOLTIP_ITEMS) : [];
-  const fullName = STATE_NAMES[stateAbbr] || stateAbbr;
-
-  let html = `
-    <div class="tooltip-title">${escapeHtml(fullName)} (${escapeHtml(stateAbbr)})</div>
-    <div class="tooltip-sub"><strong>${formatValue(count)}</strong> matching record${count === 1 ? "" : "s"}</div>
-  `;
-
-  if (records.length > 0) {
-    html += `<div class="tooltip-list">`;
-    records.forEach(r => {
-      html += `
-        <div class="tooltip-item">
-          <div class="tooltip-year">${escapeHtml(r.year)}</div>
-          <div class="tooltip-desc">${escapeHtml(r.description)}</div>
-          <div class="tooltip-notes">${escapeHtml(r.text_notes)}</div>
-        </div>
-      `;
-    });
-    html += `</div>`;
-  }
-
-  return html;
-}
-
-function openMobilePopup(stateAbbr, bundle){
-  mobilePopupContent.html(buildPopupHtml(stateAbbr, bundle));
-  mobilePopup.classed("open", true);
-  mobilePopupOverlay.classed("open", true);
-}
-
-function closeMobilePopup(){
-  mobilePopup.classed("open", false);
-  mobilePopupOverlay.classed("open", false);
-}
-
-mobilePopupClose.on("click", closeMobilePopup);
-mobilePopupOverlay.on("click", closeMobilePopup);
-
-function getShortLabel(label){
-  const s = String(label || "");
-  return s.split("(")[0].trim();
-}
-
 
 function parseStateGridText(gridText){
   const states = [];
@@ -468,6 +474,10 @@ function parseStateGridText(gridText){
 
 const GRID_STATES = parseStateGridText(document.getElementById("grid").textContent);
 const tooltip = d3.select("#tooltip");
+const mobilePopup = d3.select("#mobilePopup");
+const mobilePopupOverlay = d3.select("#mobilePopupOverlay");
+const mobilePopupContent = d3.select("#mobilePopupContent");
+const mobilePopupClose = d3.select("#mobilePopupClose");
 
 function clampInt(n, min, max){
   n = Math.round(Number(n));
@@ -492,6 +502,11 @@ function matchesToggle(rowValue, mode){
   if (mode === "yes") return String(rowValue).trim() === "1";
   if (mode === "no") return String(rowValue).trim() === "0";
   return true;
+}
+
+function getShortLabel(label){
+  const s = String(label || "");
+  return s.split("(")[0].trim();
 }
 
 function getThresholdScale(breaks, colors){
@@ -556,6 +571,56 @@ function escapeHtml(str){
     .replaceAll('"', "&quot;")
     .replaceAll("'", "&#39;");
 }
+
+function isTouchLikeDevice(){
+  return window.matchMedia("(hover: none), (pointer: coarse)").matches;
+}
+
+function buildPopupHtml(stateAbbr, bundle){
+  const count = bundle ? bundle.count : 0;
+  const records = bundle ? bundle.records.slice(0, CONFIG.MAX_TOOLTIP_ITEMS) : [];
+  const fullName = STATE_NAMES[stateAbbr] || stateAbbr;
+
+  let html = `
+    <div class="tooltip-title">${escapeHtml(fullName)} (${escapeHtml(stateAbbr)})</div>
+    <div class="tooltip-sub"><strong>${formatValue(count)}</strong> matching record${count === 1 ? "" : "s"}</div>
+  `;
+
+  if (records.length > 0) {
+    html += `<div class="tooltip-list">`;
+    records.forEach(r => {
+      html += `
+        <div class="tooltip-item">
+          <div class="tooltip-year">${escapeHtml(r.year)}</div>
+          <div class="tooltip-desc">${escapeHtml(r.description)}</div>
+          <div class="tooltip-notes">${escapeHtml(r.text_notes)}</div>
+        </div>
+      `;
+    });
+    html += `</div>`;
+
+    if (bundle.records.length > CONFIG.MAX_TOOLTIP_ITEMS) {
+      html += `<div class="tooltip-sub" style="margin-top:8px;">Showing first ${CONFIG.MAX_TOOLTIP_ITEMS} records.</div>`;
+    }
+  }
+
+  return html;
+}
+
+function openMobilePopup(stateAbbr, bundle){
+  mobilePopupContent.html(buildPopupHtml(stateAbbr, bundle));
+  mobilePopup.classed("open", true);
+  mobilePopupOverlay.classed("open", true);
+}
+
+function closeMobilePopup(){
+  mobilePopup.classed("open", false);
+  mobilePopupOverlay.classed("open", false);
+}
+
+mobilePopupClose.on("click", closeMobilePopup);
+mobilePopupOverlay.on("click", closeMobilePopup);
+
 function showTooltip(event, stateAbbr, bundle){
   if (isTouchLikeDevice()) return;
 
@@ -565,6 +630,7 @@ function showTooltip(event, stateAbbr, bundle){
     .style("left", `${event.clientX + 12}px`)
     .style("top", `${event.clientY + 12}px`);
 }
+
 function hideTooltip(){
   tooltip.style("opacity", 0);
 }
@@ -576,15 +642,20 @@ function getFilteredRows(rawRows, filterState){
   );
 }
 
-function aggregateRows(rawRows, selectedColumns){
+function getMatchedRows(rawRows, selectedColumns, filters){
+  const filteredRows = getFilteredRows(rawRows, filters);
+
+  return filteredRows.filter(row =>
+    selectedColumns.some(column => isOne(row[column]))
+  );
+}
+
+function aggregateRows(rows){
   const grouped = new Map();
 
-  rawRows.forEach(row => {
+  rows.forEach(row => {
     const state = cleanAbbr(row[CONFIG.STATE_COL]);
     if (!state) return;
-
-    const matchesAnySelected = selectedColumns.some(column => isOne(row[column]));
-    if (!matchesAnySelected) return;
 
     const key = state;
 
@@ -667,7 +738,7 @@ function renderToggleGroup(containerId, key, labelText){
 
   host.append("div")
     .attr("class", "toggleLabel")
-    .text(labelText);
+    .text(getShortLabel(labelText));
 
   host.selectAll(".miniBtn")
     .data(options)
@@ -732,6 +803,132 @@ function drawMapSkeleton(){
   return state;
 }
 
+function makeYearBin(yearValue, binSize = 2){
+  const year = +yearValue;
+  if (!Number.isFinite(year)) return null;
+
+  const start = Math.floor(year / binSize) * binSize;
+  const end = start + binSize - 1;
+
+  return {
+    start,
+    end,
+    label: `${start}-${end}`
+  };
+}
+
+function aggregateTimeline(rows, binSize = 2){
+  const counts = new Map();
+
+  rows.forEach(row => {
+    const yr = makeYearBin(row[CONFIG.YEAR_COL], binSize);
+    if (!yr) return;
+
+    if (!counts.has(yr.label)) {
+      counts.set(yr.label, {
+        label: yr.label,
+        start: yr.start,
+        end: yr.end,
+        count: 0
+      });
+    }
+
+    counts.get(yr.label).count += 1;
+  });
+
+  return Array.from(counts.values()).sort((a, b) => a.start - b.start);
+}
+
+function renderTimeline(rows){
+  const host = d3.select("#timelineHost").html("");
+
+  const data = aggregateTimeline(rows, CONFIG.TIMELINE_BIN_SIZE);
+
+  const wrapWidth = host.node().getBoundingClientRect().width || 760;
+  const margin = CONFIG.TIMELINE_MARGIN;
+  const width = wrapWidth;
+  const height = CONFIG.TIMELINE_HEIGHT;
+  const innerWidth = width - margin.left - margin.right;
+  const innerHeight = height - margin.top - margin.bottom;
+
+  const svg = host.append("svg")
+    .attr("viewBox", `0 0 ${width} ${height}`);
+
+  const g = svg.append("g")
+    .attr("transform", `translate(${margin.left},${margin.top})`);
+
+  if (!data.length) {
+    g.append("text")
+      .attr("x", 0)
+      .attr("y", 20)
+      .attr("fill", "#666")
+      .style("font-family", '"Benton", system-ui, sans-serif')
+      .style("font-size", "12px")
+      .text("No matching records.");
+    return;
+  }
+
+  const x = d3.scaleBand()
+    .domain(data.map(d => d.label))
+    .range([0, innerWidth])
+    .padding(0.15);
+
+  const yMax = d3.max(data, d => d.count) || 0;
+
+  const y = d3.scaleLinear()
+    .domain([0, yMax])
+    .nice()
+    .range([innerHeight, 0]);
+
+  const yGrid = d3.axisLeft(y)
+    .tickSize(-innerWidth)
+    .tickFormat("");
+
+  g.append("g")
+    .attr("class", "timelineGrid")
+    .call(yGrid);
+
+  g.selectAll(".timelineBar")
+    .data(data)
+    .enter()
+    .append("rect")
+    .attr("class", "timelineBar")
+    .attr("x", d => x(d.label))
+    .attr("y", d => y(d.count))
+    .attr("width", x.bandwidth())
+    .attr("height", d => innerHeight - y(d.count))
+    .attr("fill", CONFIG.TIMELINE_BAR_COLOR);
+
+  g.selectAll(".timelineBarLabel")
+    .data(data)
+    .enter()
+    .append("text")
+    .attr("class", "timelineBarLabel")
+    .attr("x", d => x(d.label) + x.bandwidth() / 2)
+    .attr("y", d => y(d.count) - 4)
+    .attr("text-anchor", "middle")
+    .style("font-family", '"Benton", system-ui, sans-serif')
+    .style("font-size", "10px")
+    .style("fill", "#111")
+    .text(d => d.count > 0 ? formatValue(d.count) : "");
+
+  const xAxis = d3.axisBottom(x);
+
+  g.append("g")
+    .attr("class", "timelineAxis")
+    .attr("transform", `translate(0,${innerHeight})`)
+    .call(xAxis)
+    .selectAll("text")
+    .attr("transform", "rotate(-35)")
+    .style("text-anchor", "end");
+
+  const yAxis = d3.axisLeft(y).ticks(4).tickFormat(d3.format(","));
+
+  g.append("g")
+    .attr("class", "timelineAxis")
+    .call(yAxis);
+}
+
 let currentState = {
   rawRows: [],
   selectedColumns: new Set(CONFIG.DEFAULT_SELECTED_COLUMNS),
@@ -743,14 +940,19 @@ let currentState = {
 };
 
 function update(){
-    closeMobilePopup();
+  closeMobilePopup();
+
   renderToggleGroup("#v4Controls", "v4", CONFIG.FILTER_LABELS.v4 || "v4");
-renderToggleGroup("#v5Controls", "v5", CONFIG.FILTER_LABELS.v5 || "v5");
+  renderToggleGroup("#v5Controls", "v5", CONFIG.FILTER_LABELS.v5 || "v5");
   renderCategoryButtons();
 
   const selectedColumns = Array.from(currentState.selectedColumns);
-  const filteredRows = getFilteredRows(currentState.rawRows, currentState.filters);
-  const aggregated = aggregateRows(filteredRows, selectedColumns);
+  const matchedRows = getMatchedRows(
+    currentState.rawRows,
+    selectedColumns,
+    currentState.filters
+  );
+  const aggregated = aggregateRows(matchedRows);
 
   const localValues = GRID_STATES.map(s => {
     const bundle = aggregated.get(s.name);
@@ -758,11 +960,16 @@ renderToggleGroup("#v5Controls", "v5", CONFIG.FILTER_LABELS.v5 || "v5");
   });
   const localMax = d3.max(localValues) || 0;
 
-  d3.select("#currentLabel").text(
-    `Selected: ${selectedColumns.map(col => CONFIG.LABELS[col] || col).join(" + ")}`
-  );
+  if (selectedColumns.length === CONFIG.DRAW_COLUMNS.length) {
+    d3.select("#currentLabel").text("Selected: All categories");
+  } else {
+    d3.select("#currentLabel").text(
+      `Selected: ${selectedColumns.map(col => CONFIG.LABELS[col] || col).join(" + ")}`
+    );
+  }
 
   renderLegend(localMax);
+  renderTimeline(matchedRows);
 
   const scale = getThresholdScale(CONFIG.SCALE_BREAKS, CONFIG.SCALE_COLORS);
 
@@ -781,28 +988,28 @@ renderToggleGroup("#v5Controls", "v5", CONFIG.FILTER_LABELS.v5 || "v5");
       .attr("fill", textColor)
       .text(value === 0 && !CONFIG.SHOW_ZERO_TEXT ? "" : formatValue(value));
 
-  if (value > 0) {
-  if (isTouchLikeDevice()) {
-    s.on("click", function(event){
-        event.preventDefault();
-        event.stopPropagation();
-        openMobilePopup(d.name, bundle);
-      })
-     .on("mouseenter", null)
-     .on("mousemove", null)
-     .on("mouseleave", hideTooltip);
-  } else {
-    s.on("mouseenter", function(event){ showTooltip(event, d.name, bundle); })
-     .on("mousemove", function(event){ showTooltip(event, d.name, bundle); })
-     .on("mouseleave", hideTooltip)
-     .on("click", null);
-  }
-} else {
-  s.on("click", null)
-   .on("mouseenter", null)
-   .on("mousemove", null)
-   .on("mouseleave", hideTooltip);
-}
+    if (value > 0) {
+      if (isTouchLikeDevice()) {
+        s.on("click", function(event){
+            event.preventDefault();
+            event.stopPropagation();
+            openMobilePopup(d.name, bundle);
+          })
+         .on("mouseenter", null)
+         .on("mousemove", null)
+         .on("mouseleave", hideTooltip);
+      } else {
+        s.on("mouseenter", function(event){ showTooltip(event, d.name, bundle); })
+         .on("mousemove", function(event){ showTooltip(event, d.name, bundle); })
+         .on("mouseleave", hideTooltip)
+         .on("click", null);
+      }
+    } else {
+      s.on("click", null)
+       .on("mouseenter", null)
+       .on("mousemove", null)
+       .on("mouseleave", hideTooltip);
+    }
   });
 }
 
